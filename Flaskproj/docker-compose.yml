@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  db:
+    image: mysql
+    ports:
+      - "33309:3306"
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: nishibu
+      MYSQL_PASSWORD: test
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+    container_name: app_db
+
+  ap:
+    build:
+      context: ./python/
+      args:
+        project_directory: "/src/"
+    # ↓↓更新
+    expose:
+      - "5005"
+    volumes:
+      - "./python/src:/projects"
+    environment:
+      TZ: "Asia/Tokyo"
+    container_name: app_ap
+    depends_on:
+      - db
+  # ↓↓追加
+  web:
+    build: ./nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    environment:
+      TZ: "Asia/Tokyo"
+    container_name: "app_web"
+    depends_on:
+      - ap
